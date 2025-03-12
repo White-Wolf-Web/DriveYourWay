@@ -1,0 +1,34 @@
+<main>
+  <div class="chat-container">
+    <h2>💬 Live Chat</h2>
+
+    <!-- Étape 1 : L'utilisateur entre son prénom -->
+    <div *ngIf="!isUsernameSet" class="username-setup">
+      <input
+        [(ngModel)]="username"
+        placeholder="Entrez votre prénom"
+        class="username-input"
+      />
+      <button (click)="setUsername()" class="username-btn">Valider</button>
+    </div>
+
+    <!-- Étape 2 : Le chat une fois le prénom défini -->
+    <div *ngIf="isUsernameSet" class="chat-box">
+      <div class="messages">
+        <div *ngFor="let msg of messages" class="message">
+          <strong>{{ msg.sender || "[No Sender]" }}</strong
+          >: {{ msg.content || "[No Content]" }}
+        </div>
+      </div>
+      <div class="input-container">
+        <input
+          [(ngModel)]="messageInput"
+          (keyup.enter)="sendMessage()"
+          placeholder="Écris un message..."
+          class="message-input"
+        />
+        <button (click)="sendMessage()" class="send-btn">➤</button>
+      </div>
+    </div>
+  </div>
+</main>

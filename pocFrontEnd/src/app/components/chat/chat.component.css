@@ -1,0 +1,88 @@
+
+main {
+  height: 100%;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #f4f4f4; 
+}
+.chat-container {
+  width: 450px;
+  margin: 50px auto;
+  padding: 20px;
+  border-radius: 10px;
+  background: white;
+  box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.username-setup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.username-input, .message-input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.username-btn, .send-btn {
+  padding: 10px;
+  border: none;
+  background-color: #007bff;
+  color: white;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.username-btn:hover, .send-btn:hover {
+  background-color: #0056b3;
+}
+
+.chat-box {
+  display: flex;
+  flex-direction: column;
+}
+
+.messages {
+  border: 1px solid #ccc;
+  padding: 10px;
+  height: 300px;
+  overflow-y: auto;
+  margin-bottom: 10px;
+  text-align: left;
+}
+
+.message {
+  padding: 5px;
+  background: #f1f1f1;
+  margin: 5px 0;
+  border-radius: 5px;
+}
+
+
+.input-container {
+  display: flex;
+  gap: 10px; /* Ajoute de l’espace entre l’input et le bouton */
+  align-items: center;
+}
+
+.message-input {
+  flex: 1;
+}
+
+.send-btn {
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
