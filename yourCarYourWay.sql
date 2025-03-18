@@ -1,7 +1,8 @@
-CREATE DATABASE yourCarYourWay2;
+CREATE DATABASE yourCarYourWay5;
 
-USE yourCarYourWay2;
+USE yourCarYourWay5;
 
+-- Table des agences de location
 CREATE TABLE Agency (
     id INT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(255) NOT NULL,
@@ -14,6 +15,33 @@ CREATE TABLE Agency (
     updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
+-- Table des langues
+CREATE TABLE Language (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(50) UNIQUE NOT NULL,
+    code VARCHAR(10) UNIQUE NOT NULL
+);
+
+-- Table des utilisateurs avec rôle unique
+CREATE TABLE User (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    firstname VARCHAR(100),
+    lastname VARCHAR(100),
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    address VARCHAR(255),
+    phone VARCHAR(50) UNIQUE,
+    role ENUM('client', 'employee', 'admin') DEFAULT 'client' NOT NULL,
+    has_driving_license BOOLEAN DEFAULT FALSE,
+    agency_id INT NULL, -- Pour les employés uniquement
+    language_id INT,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (agency_id) REFERENCES Agency(id) ON DELETE SET NULL,
+    FOREIGN KEY (language_id) REFERENCES Language(id) ON DELETE SET NULL
+);
+
+-- Table des véhicules
 CREATE TABLE Vehicle (
     id INT PRIMARY KEY AUTO_INCREMENT,
     category VARCHAR(100),
@@ -30,54 +58,38 @@ CREATE TABLE Vehicle (
     FOREIGN KEY (agency_id) REFERENCES Agency(id) ON DELETE CASCADE
 );
 
-CREATE TABLE User (
+-- Table des offres de location
+CREATE TABLE RentalOffer (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    firstname VARCHAR(100),
-    lastname VARCHAR(100),
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    address VARCHAR(255),
-    phone VARCHAR(50) UNIQUE,
-    has_driving_license BOOLEAN DEFAULT FALSE,
-    role ENUM('admin', 'manager', 'client', 'user') DEFAULT 'user' NOT NULL,
+    vehicle_id INT,
+    price DECIMAL(10,2) NOT NULL,
+    description TEXT,
+    available_from TIMESTAMP NOT NULL,
+    available_to TIMESTAMP NOT NULL,
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (vehicle_id) REFERENCES Vehicle(id) ON DELETE CASCADE
 );
 
-CREATE TABLE Admin (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    agency_id INT,
-    user_id INT,
-    firstname VARCHAR(100),
-    lastname VARCHAR(100),
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    role ENUM('superadmin', 'manager') DEFAULT 'manager' NOT NULL,
-    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (agency_id) REFERENCES Agency(id) ON DELETE SET NULL,
-    FOREIGN KEY (user_id) REFERENCES User(id) ON DELETE CASCADE
-);
-
+-- Table des réservations
 CREATE TABLE Reservation (
     id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT,
-    vehicle_id INT,
+    offer_id INT,
     agency_pickup_id INT,
     agency_dropoff_id INT,
-    city_pickup VARCHAR(100),
-    city_dropoff VARCHAR(100),
     date_start TIMESTAMP NOT NULL,
     date_end TIMESTAMP NOT NULL,
     status ENUM('pending', 'confirmed', 'cancelled') DEFAULT 'pending',
-    price DECIMAL(10,2),
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES User(id) ON DELETE CASCADE,
-    FOREIGN KEY (vehicle_id) REFERENCES Vehicle(id) ON DELETE CASCADE,
+    FOREIGN KEY (offer_id) REFERENCES RentalOffer(id) ON DELETE CASCADE,
     FOREIGN KEY (agency_pickup_id) REFERENCES Agency(id) ON DELETE CASCADE,
     FOREIGN KEY (agency_dropoff_id) REFERENCES Agency(id) ON DELETE CASCADE
 );
 
+-- Table des paiements
 CREATE TABLE Payment (
     id INT PRIMARY KEY AUTO_INCREMENT,
     reservation_id INT UNIQUE,
@@ -89,6 +101,7 @@ CREATE TABLE Payment (
     FOREIGN KEY (reservation_id) REFERENCES Reservation(id) ON DELETE CASCADE
 );
 
+-- Table des factures
 CREATE TABLE Invoice (
     id INT PRIMARY KEY AUTO_INCREMENT,
     reservation_id INT UNIQUE,
@@ -98,24 +111,7 @@ CREATE TABLE Invoice (
     FOREIGN KEY (reservation_id) REFERENCES Reservation(id) ON DELETE CASCADE
 );
 
-CREATE TABLE Contract (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    reservation_id INT UNIQUE,
-    date_signed TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    file_pdf VARCHAR(255),
-    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (reservation_id) REFERENCES Reservation(id) ON DELETE CASCADE
-);
-
-CREATE TABLE Support (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    user_id INT,
-    message TEXT NOT NULL,
-    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    type ENUM('chat', 'email') NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES User(id) ON DELETE CASCADE
-);
-
+-- Table des avis
 CREATE TABLE Review (
     id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT,
@@ -127,101 +123,57 @@ CREATE TABLE Review (
     FOREIGN KEY (vehicle_id) REFERENCES Vehicle(id) ON DELETE CASCADE
 );
 
-CREATE TABLE Notification (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    user_id INT,
-    message TEXT NOT NULL,
-    type ENUM('email', 'SMS', 'push') NOT NULL,
-    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES User(id) ON DELETE CASCADE
-);
-
+-- Table des conversations (Chat entre Employé et Client)
 CREATE TABLE Conversation (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    user_id INT,
-    agent_id INT,
+    client_id INT,
+    employee_id INT,
     status ENUM('open', 'closed') DEFAULT 'open',
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES User(id) ON DELETE CASCADE,
-    FOREIGN KEY (agent_id) REFERENCES Admin(id) ON DELETE CASCADE
+    FOREIGN KEY (client_id) REFERENCES User(id) ON DELETE CASCADE,
+    FOREIGN KEY (employee_id) REFERENCES User(id) ON DELETE CASCADE
 );
 
-CREATE TABLE Chat (
+-- Table des messages de chat
+CREATE TABLE ChatMessage (
     id INT PRIMARY KEY AUTO_INCREMENT,
     conversation_id INT,
-    user_id INT,
+    sender_id INT,
     message TEXT NOT NULL,
-    date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (conversation_id) REFERENCES Conversation(id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES User(id) ON DELETE CASCADE
+    FOREIGN KEY (sender_id) REFERENCES User(id) ON DELETE CASCADE
 );
 
-SHOW TABLES;
+-- Insertion des données pour tester toutes les tables
+INSERT INTO Language (name, code) VALUES ('Français', 'FR'), ('English', 'EN'), ('Español', 'ES'), ('Deutsch', 'DE'), ('Italiano', 'IT'), ('Português', 'PT');
+INSERT INTO Agency (name, address, city, postcode, country, phone) VALUES ('Agence Centrale', '45 Rue de Paris', 'Paris', '75001', 'France', '0145678910');
+INSERT INTO User (firstname, lastname, email, password, address, phone, role, has_driving_license, agency_id, language_id) VALUES 
+('John', 'Doe', 'johndoe@email.com', 'hashedpassword', '123 Main St', '1234567890', 'client', TRUE, NULL, 1),
+('Alice', 'Smith', 'alice@email.com', 'hashedpassword', '456 Elm St', '0987654321', 'employee', FALSE, 1, 1),
+('Bob', 'Admin', 'admin@email.com', 'hashedpassword', '789 Oak St', '1122334455', 'admin', FALSE, NULL, 1);
+INSERT INTO Vehicle (category, model, brand, plate_number, fuel_type, transmission, mileage, availability, agency_id) VALUES
+('SUV', 'Tiguan', 'Volkswagen', 'AB-123-CD', 'diesel', 'automatic', 50000, TRUE, 1),
+('SUV', 'Q3', 'Audi', 'XY-987-ZT', 'petrol', 'automatic', 30000, TRUE, 1),
+('Sedan', 'Model 3', 'Tesla', 'EV-456-RT', 'electric', 'automatic', 15000, TRUE, 1),
+('Hatchback', 'Clio', 'Renault', 'GH-321-PL', 'petrol', 'manual', 40000, TRUE, 1);
+INSERT INTO RentalOffer (vehicle_id, price, description, available_from, available_to) VALUES (1, 299.99, 'Offre spéciale', NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY));
+INSERT INTO Reservation (user_id, offer_id, agency_pickup_id, agency_dropoff_id, date_start, date_end, status) VALUES (1, 1, 1, 1, NOW(), DATE_ADD(NOW(), INTERVAL 7 DAY), 'confirmed');
+INSERT INTO Payment (reservation_id, amount, status, payment_method) VALUES (1, 299.99, 'paid', 'credit_card');
+INSERT INTO Invoice (reservation_id, amount, file_pdf) VALUES (1, 299.99, 'facture_1.pdf');
+INSERT INTO Review (user_id, vehicle_id, rating, comment) VALUES (1, 1, 5, 'Super voiture, très propre !');
+INSERT INTO Conversation (client_id, employee_id, status) VALUES (1, 2, 'open');
+INSERT INTO ChatMessage (conversation_id, sender_id, message) VALUES (1, 1, 'Bonjour, j’ai une question sur ma réservation.'), (1, 2, 'Bonjour, comment puis-je vous aider ?');
 
-DESC Admin;
-DESC Agency;
-DESC Chat;
-DESC Contract;
-DESC Conversation;
-DESC Invoice;
-DESC Notification;
-DESC Payment;
-DESC Reservation;
-DESC Review;
-DESC Support;
-DESC User;
-DESC Vehicle;
 
--- TEST --
-
-INSERT INTO User (firstname, lastname, email, password, address, phone, has_driving_license, role, createdAt, updatedAt)
-VALUES ('John', 'Doe', 'johndoe@email.com', 'hashedpassword', '123 Main Street', '1234567890', TRUE, 'client', NOW(), NOW());
-
-INSERT INTO Agency (name, address, city, postcode, country, phone, createdAt, updatedAt)
-VALUES ('Agence Centrale', '45 Rue de Paris', 'Paris', '75001', 'France', '0145678910', NOW(), NOW());
-
-INSERT INTO Vehicle (category, model, brand, plate_number, fuel_type, transmission, mileage, availability, agency_id, createdAt, updatedAt)
-VALUES ('SUV', 'Tiguan', 'Volkswagen', 'AB-123-CD', 'diesel', 'automatic', 50000, TRUE, 1, NOW(), NOW());
-
-INSERT INTO Reservation (user_id, vehicle_id, agency_pickup_id, agency_dropoff_id, city_pickup, city_dropoff, date_start, date_end, status, price, createdAt, updatedAt) 
-VALUES (1, 1, 1, 1, 'Paris', 'Lyon', '2025-03-20 10:00:00', '2025-03-25 10:00:00', 'pending', 299.99, NOW(), NOW());
-
-INSERT INTO Payment (reservation_id, amount, status, payment_method, createdAt, updatedAt) 
-VALUES (1, 299.99, 'paid', 'credit_card', NOW(), NOW());
-
-INSERT INTO Invoice (reservation_id, amount, file_pdf, createdAt) 
-VALUES (1, 299.99, 'invoice_1.pdf', NOW());
-
-INSERT INTO Contract (reservation_id, file_pdf, createdAt) 
-VALUES (1, 'contract_1.pdf', NOW());
-
-INSERT INTO Support (user_id, message, type, createdAt) 
-VALUES (1, 'J’ai une question sur ma réservation.', 'chat', NOW());
-
-INSERT INTO Notification (user_id, message, type, createdAt) 
-VALUES (1, 'Votre réservation a été confirmée.', 'email', NOW());
-
-INSERT INTO Review (user_id, vehicle_id, rating, comment, createdAt) 
-VALUES (1, 1, 5, 'Super expérience, voiture impeccable !', NOW());
-
-INSERT INTO Admin (agency_id, user_id, firstname, lastname, email, password, role, createdAt) 
-VALUES (1, 1, 'Admin', 'Agence', 'admin@email.com', 'hashedpassword', 'manager', NOW());
-
-INSERT INTO Conversation (user_id, agent_id, status, createdAt) 
-VALUES (1, 1, 'open', NOW());
-
-INSERT INTO Chat (conversation_id, user_id, message, date) 
-VALUES (1, 1, 'Bonjour, j’ai un problème avec ma réservation.', NOW());
-
-SELECT * FROM User;
 SELECT * FROM Agency;
+SELECT * FROM Language;
+SELECT * FROM User;
 SELECT * FROM Vehicle;
+SELECT * FROM RentalOffer;
 SELECT * FROM Reservation;
 SELECT * FROM Payment;
 SELECT * FROM Invoice;
-SELECT * FROM Contract;
-SELECT * FROM Support;
-SELECT * FROM Notification;
 SELECT * FROM Review;
 SELECT * FROM Conversation;
-SELECT * FROM Chat;
+SELECT * FROM ChatMessage;
