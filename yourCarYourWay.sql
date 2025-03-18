@@ -1,6 +1,6 @@
-CREATE DATABASE yourCarYourWay5;
+CREATE DATABASE yourCarYourWay6;
 
-USE yourCarYourWay5;
+USE yourCarYourWay6;
 
 -- Table des agences de location
 CREATE TABLE Agency (
@@ -145,6 +145,17 @@ CREATE TABLE ChatMessage (
     FOREIGN KEY (sender_id) REFERENCES User(id) ON DELETE CASCADE
 );
 
+-- Table des sessions vidéo (Assistance vidéo entre client et employé)
+CREATE TABLE VideoSession (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    client_id INT,
+    employee_id INT,
+    status ENUM('open', 'closed') DEFAULT 'open',
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (client_id) REFERENCES User(id) ON DELETE CASCADE,
+    FOREIGN KEY (employee_id) REFERENCES User(id) ON DELETE CASCADE
+);
+
 -- Insertion des données pour tester toutes les tables
 INSERT INTO Language (name, code) VALUES ('Français', 'FR'), ('English', 'EN'), ('Español', 'ES'), ('Deutsch', 'DE'), ('Italiano', 'IT'), ('Português', 'PT');
 INSERT INTO Agency (name, address, city, postcode, country, phone) VALUES ('Agence Centrale', '45 Rue de Paris', 'Paris', '75001', 'France', '0145678910');
@@ -164,7 +175,7 @@ INSERT INTO Invoice (reservation_id, amount, file_pdf) VALUES (1, 299.99, 'factu
 INSERT INTO Review (user_id, vehicle_id, rating, comment) VALUES (1, 1, 5, 'Super voiture, très propre !');
 INSERT INTO Conversation (client_id, employee_id, status) VALUES (1, 2, 'open');
 INSERT INTO ChatMessage (conversation_id, sender_id, message) VALUES (1, 1, 'Bonjour, j’ai une question sur ma réservation.'), (1, 2, 'Bonjour, comment puis-je vous aider ?');
-
+INSERT INTO VideoSession (client_id, employee_id, status) VALUES (1, 2, 'open');
 
 SELECT * FROM Agency;
 SELECT * FROM Language;
@@ -177,3 +188,4 @@ SELECT * FROM Invoice;
 SELECT * FROM Review;
 SELECT * FROM Conversation;
 SELECT * FROM ChatMessage;
+SELECT * FROM VideoSession;
